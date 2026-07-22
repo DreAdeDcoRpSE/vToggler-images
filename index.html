@@ -1,10 +1,270 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Temp</title>
+<meta charset="UTF-8">
+<title>VToggler App & Icons - Beta Test</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+/* GLOBAL FIX (IMPORTANT) */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #e0e0e0;
+}
+
+/* MAIN LAYOUT */
+.wrapper {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    align-items: flex-start;
+}
+
+/* IMAGE AREA */
+.image-area {
+    flex: 3;
+}
+
+/* IMAGE GRID */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+/* CARD */
+.item {
+    background: #1e1e1e;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 0 8px rgba(0,0,0,.5);
+}
+
+/* IMAGES */
+.item img {
+    width: 100%;
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/* TEXT */
+.filename {
+    margin-top: 10px;
+    font-size: 13px;
+    word-break: break-word;
+}
+
+/* BUTTON */
+.btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #0086d8;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.btn:hover {
+    background: #005193;
+}
+
+.btn:active {
+    background: #79c3ff;
+    color: #000;
+}
+
+.ytbtn {
+    background: #C4302B;
+    color: #FFF;
+    border: 2px solid #FFF;
+    border-radius:8px;
+    width:80%;
+    font-weight:900;
+    margin:0 auto;
+}
+
+.ytbtn:hover {
+    background:#8a221e;
+}
+
+.ytbtn:active {
+    background:#ffe1e0;
+    color:#000;
+}
+
+.section-title {
+    margin:0 0 10px 0;
+    font-size:16px;
+    color:#aaa;
+}
+
+.loading,
+.error {
+    text-align:center;
+    grid-column:1/-1;
+    padding:25px;
+}
+
+.filename small {
+    color: #888;
+    font-size: 12px;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width:1200px){
+
+    .wrapper{
+        flex-direction:column;
+    }
+
+    .image-area{
+        order:1;
+        width:100%;
+    }
+
+    .image-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media (max-width:500px){
+
+    .image-grid{
+        grid-template-columns:1fr;
+    }
+
+    .item{
+        padding:12px;
+    }
+
+    .btn{
+        font-size:14px;
+        padding:12px;
+    }
+
+}
+
+</style>
 </head>
+
 <body>
-    <h1>Get Lost.</h1>
-    <p>This website is hosted on GitHub, and I am not done with it.</p>
+
+<div class="wrapper">
+
+    <div class="image-area">
+
+        <div class="section-title">Images</div>
+
+        <div class="image-grid" id="image-grid">
+            <div class="loading">Loading images...</div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const owner = "DreAdeDcoRpSE";
+const repo = "vToggler-images";
+const folder = "";
+
+
+const allowed = ["jpg","jpeg","png","gif"];
+
+const apiUrl = folder === ""
+    ? `https://api.github.com/repos/${owner}/${repo}/contents`
+    : `https://api.github.com/repos/${owner}/${repo}/contents/${folder}`;
+
+const grid = document.getElementById("image-grid");
+
+function formatBytes(bytes) {
+
+    if (bytes === 0) return "0 Bytes";
+
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
+    return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(2))} ${sizes[i]}`;
+
+}
+
+fetch(apiUrl)
+.then(response => {
+
+    if(!response.ok)
+        throw new Error("Unable to read repository.");
+
+    return response.json();
+
+})
+.then(files => {
+
+    grid.innerHTML = "";
+
+    files
+        .filter(file => file.type === "file")
+        .filter(file => {
+
+            const ext = file.name.split(".").pop().toLowerCase();
+            return allowed.includes(ext);
+
+        })
+        .sort((a,b)=>a.name.localeCompare(b.name))
+        .forEach(file=>{
+
+            const card = document.createElement("div");
+            card.className = "item";
+
+            card.innerHTML = `
+                <img width="100" height="100" loading="lazy" decoding="async" src="${file.download_url}" alt="${file.name}">
+                <div class="filename">${file.name}<br><small>${formatBytes(file.size)}</small></div>
+                <a class="btn" href="${file.download_url}" download="${file.name}">
+                    Download Image
+                </a>
+            `;
+
+            grid.appendChild(card);
+
+        });
+
+    if(grid.children.length === 0){
+
+        grid.innerHTML = '<div class="error">No images found.</div>';
+
+    }
+
+})
+.catch(error=>{
+
+    console.error(error);
+
+    grid.innerHTML = `
+        <div class="error">
+            Unable to load images.<br><br>
+            ${error.message}
+        </div>
+    `;
+
+});
+
+</script>
+
 </body>
 </html>
